@@ -1,0 +1,8 @@
+metadata: sentence  # none / raw / sentence
+split: last_out # last_out / timestamp
+user_core: 5
+item_core: 5
+rating_score: 0.0 # rating score smaller than this score would be deleted
+version: "Yelp_2020"  # ["Yelp_2018", "Yelp_2020", "Yelp_2021", "Yelp_2022"]
+date_min: "2019-01-01 00:00:00"
+date_max: "2019-12-31 00:00:00"

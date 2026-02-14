@@ -1,0 +1,5 @@
+metadata: sentence  # none / raw / sentence
+split: last_out # last_out / timestamp
+user_core: 5
+item_core: 5
+subsample_every_n_users: 7  # Following LIGER (https://arxiv.org/abs/2411.18814)

@@ -1,0 +1,43 @@
+# Overwritting configs
+metadata: sentence    # Overwrite data config file, TIGER only supports sentence metadata
+lr: 0.003             # Overwrite learning rate
+weight_decay: 0.05    # Overwrite weight decay
+
+# Config for sentence embedding model
+sent_emb_model: sentence-transformers/sentence-t5-base
+sent_emb_batch_size: 512
+sent_emb_dim: 768
+sent_emb_pca: 128     # -1 means no PCA, otherwise PCA dimension
+
+# Config for RQ
+rq_faiss: True
+faiss_omp_num_threads: 32
+rq_n_codebooks: 3
+rq_codebook_size: 256
+
+# Config for RQ-VAE
+# Omit this part if using Faiss instead of training RQ-VAE from scratch
+rqvae_hidden_sizes: [2048,1024,512,256,128]
+rqvae_dropout: 0.0
+rqvae_lr: 0.001
+ravae_batch_size: 2048
+rqvae_epoch: 10000
+rqvae_beta: 0.25
+rqvae_verbose: 500
+rqvae_low_usage_threshold: -1 # reassignment (to low usage entries only) is triggered when there're more than 10 low usage entries, -1 means no reassignment
+
+# Config for TIGER
+n_user_tokens: 1      # Number of user tokens hashed from user ids
+max_item_seq_len: 20  # Maximum #items in a sequence
+num_beams: 50         # Number of beams for beam search
+
+# Config for T5
+num_layers: 4
+num_decoder_layers: 4
+d_model: 128
+d_ff: 1024
+num_heads: 6
+d_kv: 64
+dropout_rate: 0.1
+activation_function: "relu"
+feed_forward_proj: "relu"

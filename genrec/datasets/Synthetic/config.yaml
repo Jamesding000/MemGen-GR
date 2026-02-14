@@ -1,0 +1,2 @@
+sync_mode: mem
+split: leave_one_out  # leave_one_out

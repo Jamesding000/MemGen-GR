@@ -1,0 +1,17 @@
+# Overwritting configs
+train_batch_size: 256
+eval_batch_size: 256
+lr: 3e-3
+
+# Config for SASRec
+max_item_seq_len: 50
+n_embd: 64
+n_layer: 2
+n_head: 2
+n_inner: 256
+activation_function: gelu_new
+resid_pdrop: 0.0
+embd_pdrop: 0.5
+attn_pdrop: 0.5
+layer_norm_epsilon: 1e-12
+initializer_range: 0.02

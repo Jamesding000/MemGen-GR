@@ -1,0 +1,4 @@
+category: Sports_and_Outdoors
+metadata: sentence  # none / raw / sentence
+split: leave_one_out  # leave_one_out
+kcore: 5core    # 5core / 0core

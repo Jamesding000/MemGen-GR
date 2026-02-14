@@ -1,0 +1,4 @@
+category: Office_Products
+metadata: sentence  # none / raw / sentence
+split: last_out # last_out / timestamp
+kcore: 5core    # 5core / 0core
