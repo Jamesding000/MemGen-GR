@@ -2,7 +2,7 @@
 
 set -e
 
-BASE_DIR="R4R_models"
+BASE_DIR="/data/user_data/jamesdin/R4R/R4R_models"
 SEM_IDS_DIR="${BASE_DIR}/semantic_ids"
 N_PREDICTIONS=50
 

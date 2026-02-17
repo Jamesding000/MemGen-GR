@@ -1,9 +1,0 @@
-Dataset,Model,Fusion_method,Weighting_func,Normalization,Best_params,Test_ndcg@10,Test_recall@10,Val_ndcg@10,Improve over SASRec,Improve_over_TIGER,Improve_over_static
-AmazonReviews2014-Sports_and_Outdoors,SASRec,none,none,min_max,,0.025313822089639903,,0.03177700497252888,0.0,0.0,
-AmazonReviews2014-Sports_and_Outdoors,TIGER,none,none,min_max,,0.023667573864948246,,0.03180056217482869,-6.503357015238766,0.0,
-AmazonReviews2014-Sports_and_Outdoors,Static Fusion (score),score,static,min_max,alpha=0.50,0.029071470553359097,0.05300859598853868,0.036812770160164925,14.844255641889312,22.832491066665856,0.0
-AmazonReviews2014-Sports_and_Outdoors,Dynamic Fusion (score+linear),score,linear,min_max,"w=2.00,b=0.40",0.029919998165917245,0.05413225462104613,0.03741813955138978,18.19628841494661,26.417681578376147,2.9187639854706426
-AmazonReviews2014-Sports_and_Outdoors,Dynamic Fusion (score+sigmoid),score,sigmoid,min_max,"k=5.00,tau=0.10",0.02957095307936987,0.05368279116804315,0.03742425384725343,16.81741688258237,24.942899716326846,1.7181192299646462
-AmazonReviews2014-Sports_and_Outdoors,Static Fusion (rank),rank,static,min_max,alpha=0.50,0.028583887093621967,0.05340187650991629,0.0362390489422445,12.91810060291287,20.77235823463425,0.0
-AmazonReviews2014-Sports_and_Outdoors,Dynamic Fusion (rank+linear),rank,linear,min_max,"w=2.00,b=0.40",0.02931944407327874,0.05385133996291926,0.03671056685135755,15.823852950590991,23.880226340820396,2.5733273338492224
-AmazonReviews2014-Sports_and_Outdoors,Dynamic Fusion (rank+sigmoid),rank,sigmoid,min_max,"k=5.00,tau=0.10",0.02924185799804784,0.05385133996291926,0.037028102288302986,15.51735606933711,23.55241041987462,2.3018944283917473

@@ -1,9 +1,0 @@
-Dataset,Model,Fusion_method,Weighting_func,Normalization,Best_params,Test_ndcg@10,Test_recall@10,Val_ndcg@10,Improve over SASRec,Improve_over_TIGER,Improve_over_static
-AmazonReviews2023-Industrial_and_Scientific,SASRec,none,none,min_max,,0.020899955387222932,,0.026239005707747523,0.0,0.0,
-AmazonReviews2023-Industrial_and_Scientific,TIGER,none,none,min_max,,0.024260614201676023,,0.03030659540491033,16.079741569724167,0.0,
-AmazonReviews2023-Industrial_and_Scientific,Static Fusion (score),score,static,min_max,alpha=0.40,0.025974814102965597,0.04830832597822889,0.032176705344232205,24.281672480722854,7.065772890329998,0.0
-AmazonReviews2023-Industrial_and_Scientific,Dynamic Fusion (score+linear),score,linear,min_max,"w=0.00,b=0.40",0.025974814102965597,0.04830832597822889,0.032176705344232205,24.281672480722854,7.065772890329998,0.0
-AmazonReviews2023-Industrial_and_Scientific,Dynamic Fusion (score+sigmoid),score,sigmoid,min_max,"k=5.00,tau=0.10",0.026061119656502593,0.04850446209669511,0.0322413394281551,24.694618594424888,7.42151637159369,0.33226629917302136
-AmazonReviews2023-Industrial_and_Scientific,Static Fusion (rank),rank,static,min_max,alpha=0.30,0.025496275489255416,0.048484848484848485,0.03152453812647884,21.992009154442588,5.0932811399887346,0.0
-AmazonReviews2023-Industrial_and_Scientific,Dynamic Fusion (rank+linear),rank,linear,min_max,"w=6.00,b=0.20",0.025495746026091493,0.048524075708541725,0.03169458996946933,21.98947583246121,5.091098741968958,-0.0020766294439598415
-AmazonReviews2023-Industrial_and_Scientific,Dynamic Fusion (rank+sigmoid),rank,sigmoid,min_max,"k=13.00,tau=0.10",0.02552568837251544,0.04866137099146808,0.03157962303921547,22.13274095369803,5.214518314841429,0.11536148984748285

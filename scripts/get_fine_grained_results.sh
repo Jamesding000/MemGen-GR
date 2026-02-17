@@ -5,7 +5,7 @@ export CUDA_VISIBLE_DEVICES=0
 # --- Configuration ---
 wandb_project="fine-grained-results"
 log_file="logs/fine_grained_results/all_fine_grained_results_test.csv"
-base_path="R4R_models"
+base_path="/data/user_data/jamesdin/R4R/R4R_models"
 
 # Define datasets (Format: DatasetName-Category OR DatasetName)
 datasets=(

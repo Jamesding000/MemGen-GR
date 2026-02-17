@@ -1,9 +1,0 @@
-Dataset,Model,Fusion_method,Weighting_func,Normalization,Best_params,Test_ndcg@10,Test_recall@10,Val_ndcg@10,Improve over SASRec,Improve_over_TIGER,Improve_over_static
-AmazonReviews2023-Musical_Instruments,SASRec,none,none,min_max,,0.02909655349876531,,0.031893335326844775,0.0,0.0,
-AmazonReviews2023-Musical_Instruments,TIGER,none,none,min_max,,0.03230486202047671,,0.035664892522857754,11.026421125263301,0.0,
-AmazonReviews2023-Musical_Instruments,Static Fusion (score),score,static,min_max,alpha=0.40,0.03429871297760722,0.06352826476784067,0.03795070738471004,17.87895421725002,6.1719841300256695,0.0
-AmazonReviews2023-Musical_Instruments,Dynamic Fusion (score+linear),score,linear,min_max,"w=10.00,b=0.20",0.034435672361748874,0.06380682114939328,0.03799589366938707,18.349660770682426,6.595943173883656,0.3993134792873201
-AmazonReviews2023-Musical_Instruments,Dynamic Fusion (score+sigmoid),score,sigmoid,min_max,"k=5.00,tau=0.10",0.034419680633273886,0.06375459182785216,0.038015115885413175,18.294699867922358,6.546440630071978,0.35268861471753526
-AmazonReviews2023-Musical_Instruments,Static Fusion (rank),rank,static,min_max,alpha=0.40,0.03397159339831253,0.06384164069708735,0.03735172401810404,16.754698798791022,5.15938243840618,0.0
-AmazonReviews2023-Musical_Instruments,Dynamic Fusion (rank+linear),rank,linear,min_max,"w=2.00,b=0.40",0.034102825909887974,0.06412019707863995,0.03742900140993623,17.205723046666336,5.56561389512084,0.38630072495204887
-AmazonReviews2023-Musical_Instruments,Dynamic Fusion (rank+sigmoid),rank,sigmoid,min_max,"k=1.00,tau=0.50",0.03389000310701522,0.0637720016016992,0.03738069644271532,16.474286579863534,4.906818934975657,-0.24017210597300076
