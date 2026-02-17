@@ -6,7 +6,6 @@ import pandas as pd
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import numpy as np
-from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
 import logging
 import re
@@ -77,6 +76,12 @@ def main():
     else:
         if args.category is None and extracted_info:
             args.category = extracted_info
+
+    dataset_identifier = get_dataset_identifier(args.dataset, category=args.category, version=args.version)
+    output_path = f"outputs/tiger_predictions_with_scores_{args.split}_{dataset_identifier}.csv"
+    if os.path.exists(output_path):
+        print(f"[Skip] Output already exists: {output_path}")
+        return
 
     config = get_config('TIGER', args.dataset, args.config_file, None)
     if args.category is not None:
@@ -207,12 +212,6 @@ def main():
             sample_id_counter += batch['input_ids'].shape[0]
 
     df_results = pd.DataFrame(all_results_list)
-    dataset_identifier = get_dataset_identifier(
-        args.dataset,
-        category=config.get('category'),
-        version=config.get('version')
-    )
-    output_path = f"Confidence/TIGER/results/tiger_predictions_with_scores_{args.split}_{dataset_identifier}.csv"
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     df_results.to_csv(output_path, index=False)
 

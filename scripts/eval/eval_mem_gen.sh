@@ -2,12 +2,10 @@
 
 export CUDA_VISIBLE_DEVICES=0
 
-# --- Configuration ---
 wandb_project="fine-grained-results"
 log_file="logs/fine_grained_results/all_fine_grained_results_test.csv"
-base_path="/data/user_data/jamesdin/R4R/R4R_models"
+base_path="saved_models"
 
-# Define datasets (Format: DatasetName-Category OR DatasetName)
 datasets=(
     "AmazonReviews2014-Sports_and_Outdoors"
     "AmazonReviews2014-Beauty"
@@ -39,7 +37,7 @@ for split in test; do
 
             checkpoint="${base_path}/${model}-${dataset}${ckpt_suffix}.pth"
 
-            cmd="python fine-grained-results.py \
+            cmd="python mem_gen_evaluation.py \
                 --model=$model \
                 --dataset=$dataset \
                 --eval=$split \
@@ -49,7 +47,6 @@ for split in test; do
                 --save_inference \
                 $subset_arg"
 
-            # Add TIGER-specific semantic IDs path (Reuses full_name e.g. 'Amazon-Sports')
             if [ "$model" == "TIGER" ]; then
                 sem_ids="${base_path}/semantic_ids/${full_name}_sentence-t5-base_256,256,256,256.sem_ids"
                 cmd="$cmd --sem_ids_path=$sem_ids"

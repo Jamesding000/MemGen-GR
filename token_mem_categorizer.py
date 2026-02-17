@@ -4,7 +4,7 @@ class PrefixGramMemorizationEvaluator:
     """Evaluator for prefix-gram memorization.
     
     Analogue to FineGrainedEvaluator but operates on token prefixes.
-    Checks for 'Contractivity' (forward reachability) in the prefix graph.
+    Checks for 'substitutability' (forward reachability) in the prefix graph.
     
     Parameters:
         train_item_seqs: List of item sequences from training data
@@ -76,7 +76,7 @@ class PrefixGramMemorizationEvaluator:
                     for hop in range(ctx_length, self.max_hop + 1):
                         self.rules[hop][context_prefix].add(target_prefix)
 
-    def has_prefix_contractivity(self, u_prefix, v_prefix, hop):
+    def has_prefix_substitutability(self, u_prefix, v_prefix, hop):
         """Check if u_prefix -> v_prefix exists in training data at this hop."""
         if not u_prefix or not v_prefix:
             return False
@@ -116,7 +116,7 @@ class PrefixGramMemorizationEvaluator:
                     continue
                 
                 # Check reachability in Prefix Graph
-                if self.has_prefix_contractivity(u_prefix, target_prefix, hop):
+                if self.has_prefix_substitutability(u_prefix, target_prefix, hop):
                     # Use your preferred naming convention
                     labels.add(f"memorization_{hop}")
 

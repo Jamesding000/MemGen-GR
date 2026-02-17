@@ -2,7 +2,7 @@
 
 set -e
 
-BASE_DIR="/data/user_data/jamesdin/R4R/R4R_models"
+BASE_DIR="saved_models"
 SEM_IDS_DIR="${BASE_DIR}/semantic_ids"
 N_PREDICTIONS=50
 
@@ -22,6 +22,7 @@ SPLITS=("val" "test")
 TOTAL=${#DATASETS[@]}
 CURRENT=0
 
+# 1. Generate inference results for SASRec and TIGER
 for DATASET_CONFIG in "${DATASETS[@]}"; do
     CURRENT=$((CURRENT + 1))
     
@@ -59,7 +60,7 @@ for DATASET_CONFIG in "${DATASETS[@]}"; do
         echo "  -> Running Split: $SPLIT"
 
         # 1. TIGER Inference
-        python routing/tiger_inference.py \
+        python adaptive_ensemble/tiger_inference.py \
             $ARGS \
             --model_ckpt "$TIGER_CKPT" \
             --sem_ids_path "$SEM_IDS_PATH" \
@@ -73,10 +74,35 @@ for DATASET_CONFIG in "${DATASETS[@]}"; do
             --n_predictions "$N_PREDICTIONS"
 
         # 2. SASRec Confidence Extraction
-        python routing/sasrec_inference_msp.py \
+        python adaptive_ensemble/sasrec_inference.py \
             $ARGS \
             --checkpoint "$SASREC_CKPT" \
             --eval "$SPLIT" \
             --n_predictions "$N_PREDICTIONS"
     done
 done
+
+# 2. Run adaptive ensemble grid search in parallel
+DATASET_IDS=()
+for DATASET_CONFIG in "${DATASETS[@]}"; do
+    IFS=':' read -r DS CAT VER <<< "$DATASET_CONFIG"
+    if [ -n "$VER" ]; then
+        DATASET_IDS+=("${DS}-${VER}")
+    elif [ -n "$CAT" ]; then
+        DATASET_IDS+=("${DS}-${CAT}")
+    else
+        DATASET_IDS+=("${DS}")
+    fi
+done
+
+echo "============================================================"
+echo "Running adaptive ensemble grid search..."
+echo "============================================================"
+
+python -m adaptive_ensemble.grid_search \
+    --datasets "${DATASET_IDS[@]}" \
+    --max_workers 7 \
+    --base_dir outputs \
+    --output_dir outputs \
+    --normalization min_max \
+    --n_predictions "$N_PREDICTIONS"

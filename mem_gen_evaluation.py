@@ -6,7 +6,7 @@ import torch
 
 from genrec.pipeline import Pipeline
 from genrec.utils import parse_command_line_args
-from genrec.fine_grained_evaluator import FineGrainedEvaluator
+from mem_gen_categorizer import FineGrainedEvaluator
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -110,7 +110,7 @@ class FineGrainedResultPipeline(Pipeline):
                         pred_tuple = tuple(pred_tokens) if len(pred_tokens) > 1 else pred_tokens[0]
                         pred_item_id = self.tokens2item.get(pred_tuple, None)
                         if not pred_item_id:
-                            pred_item_categories = {'novelty'}
+                            pred_item_categories = {'uncategorized'}
                         else:
                             history_seq = test_cases[case_idx][:-1]
                             pred_item_categories = self.fine_grained_evaluator.get_case_labels(history_seq + [pred_item_id])
@@ -166,20 +166,6 @@ class FineGrainedResultPipeline(Pipeline):
             else:
                 self.log(f'{label_key:<20}: NDCG@10 = N/A    (n=0, ratio=0.00%)')
         
-        # fine_grained_results = self.fine_grained_evaluator.compute_fine_grained_metrics(
-        #     batch_indices, 
-        #     test_cases, 
-        #     ndcg_10_scores,
-        #     case_labels=case_labels
-        # )
-        
-        # prediction_ratio = self.fine_grained_evaluator.compute_prediction_distribution(
-        #     batch_indices, 
-        #     test_cases, 
-        #     preds, 
-        #     self.tokens2item
-        # )
-        
         # Helper function to report prediction distribution
         self.log('=' * 80)
         self.log('Prediction Category Distribution (Model Behavior):')
@@ -199,20 +185,11 @@ class FineGrainedResultPipeline(Pipeline):
 
         self.trainer.end()
 
-    # def _report_prediction_distribution(self, prediction_ratio):
-    #     """Report the distribution of categories in the model's own predictions."""
-    #     self.log('=' * 80)
-    #     self.log('Prediction Category Distribution (Model Behavior):')
-    #     self.log('=' * 80)
-    #     for label_key, ratio in prediction_ratio.items():
-    #         self.log(f'{label_key:<20}: Ratio = {ratio:.2%}')
-    #     self.log('')
-
     def _write_to_csv(self, fine_grained_results, prediction_ratio):
         """Write fine-grained results to CSV file aligned with paper columns."""
         total_cases = len(self.split_datasets[self.eval_set]["item_seq"])
 
-        # Header correctly includes generalization and novelty at the end
+        # Header correctly includes generalization and uncategorized at the end
         ordered_keys = self.fine_grained_evaluator.ordered_keys
         header = ["Category"] + ordered_keys
 

@@ -131,7 +131,9 @@ class Pipeline:
         if self.accelerator.is_main_process and self.checkpoint_path is None:
             self.log(f'Loaded best model checkpoint from {self.trainer.saved_model_ckpt}')
 
-        test_results = self.trainer.evaluate(test_dataloader)
+        test_results = self.trainer.evaluate(
+            test_dataloader, split='test',
+            step=self.trainer.current_step, epoch=self.trainer.best_epoch)
 
         if self.accelerator.is_main_process:
             for key in test_results:

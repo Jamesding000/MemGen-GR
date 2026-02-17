@@ -104,6 +104,11 @@ class SASRecConfidencePipeline(Pipeline):
 
     def run(self):
         """Run inference on test set and save confidence information."""
+        dataset_identifier = get_dataset_identifier(
+            self.config['dataset'], category=self.category, version=self.version
+        )
+        output_path = f'outputs/sasrec_predictions_with_scores_{self.eval_set}_{dataset_identifier}.csv'
+
         self.log("SASRec Confidence Extraction")
         self.log(f"Dataset: {self.config['dataset']}")
         if self.category:
@@ -158,12 +163,6 @@ class SASRecConfidencePipeline(Pipeline):
                     })
 
         df = pd.DataFrame(results)
-        dataset_identifier = get_dataset_identifier(
-            self.config['dataset'],
-            category=self.category,
-            version=self.version
-        )
-        output_path = f'Confidence/SASRec/results/sasrec_predictions_with_scores_{self.eval_set}_{dataset_identifier}.csv'
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         df.to_csv(output_path, index=False)
 
@@ -201,7 +200,14 @@ if __name__ == '__main__':
     else:
         if args.category is None and extracted_info:
             args.category = extracted_info
-    
+
+    # Skip if output already exists (before loading model)
+    dataset_identifier = get_dataset_identifier(args.dataset, category=args.category, version=args.version)
+    output_path = f'outputs/sasrec_predictions_with_scores_{args.eval}_{dataset_identifier}.csv'
+    if os.path.exists(output_path):
+        print(f"[Skip] Output already exists: {output_path}")
+        sys.exit(0)
+
     if args.category is not None:
         command_line_configs['category'] = args.category
     if args.version is not None:

@@ -75,23 +75,22 @@ class TIGER(AbstractModel):
         outputs = self.t5(**batch)
         return outputs
 
-    def generate(self, batch: dict, n_return_sequences: int = 1) -> torch.Tensor:
+    def generate(self, batch: dict, n_return_sequences: int = 1, return_scores: bool = False):
         """
         Generates sequences using beam search algorithm.
 
         Args:
             batch (dict): A dictionary containing input_ids and attention_mask.
             n_return_sequences (int): The number of sequences to generate.
+            return_scores (bool): Whether to return the beam scores (log probs).
 
         Returns:
-            torch.Tensor: The generated sequences.
+            torch.Tensor or dict: The generated sequences, or a dict if return_scores=True.
         """
         n_digit = self.tokenizer.n_digit
         num_beams = self.config['num_beams']
         batch_size = batch['input_ids'].shape[0]
 
-        # Use HuggingFace's built-in generate with KV cache
-        # max_new_tokens = n_digit semantic tokens + eos = n_digit + 1
         with torch.no_grad():
             outputs = self.t5.generate(
                 input_ids=batch['input_ids'],
@@ -101,19 +100,27 @@ class TIGER(AbstractModel):
                 num_return_sequences=n_return_sequences,
                 return_dict_in_generate=True,
                 output_scores=True,
-                use_cache=True,  # Enable KV cache
+                use_cache=True,
             )
 
-        # outputs.sequences: (batch_size * n_return_sequences, seq_len)
-        # Extract semantic ID tokens (skip decoder_start_token at position 0)
+        # 1. Process Sequences
         sequences = outputs.sequences
         seq_len = sequences.shape[1]
-
-        # Reshape: (batch_size * n_return_sequences, seq_len) -> (batch_size, n_return_sequences, seq_len)
+        
+        # Reshape to (batch_size, n_return_sequences, seq_len)
         sequences = sequences.reshape(batch_size, n_return_sequences, seq_len)
+        
+        # Extract semantic tokens (skip decoder_start_token)
+        pred_tokens = sequences[:, :, 1:1+n_digit]
 
-        # Extract n_digit tokens starting from position 1 (after decoder_start_token)
-        # sequences[:, :, 1:1+n_digit] are semantic ID tokens
-        pred_tokens = sequences[:, :, 1:1+n_digit]  # (batch_size, n_return_sequences, n_digit)
-
+        # 2. Return Logic (Minimal Change)
+        if return_scores:
+            # sequences_scores contains the sum of log probs for the generated sequence
+            # Shape: (batch_size * n_return_sequences,) -> Reshape to (batch_size, n_return_sequences)
+            scores = outputs.sequences_scores.reshape(batch_size, n_return_sequences)
+            return {
+                'preds': pred_tokens, 
+                'scores': scores
+            }
+        
         return pred_tokens

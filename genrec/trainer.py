@@ -13,7 +13,7 @@ from accelerate import Accelerator
 from genrec.model import AbstractModel
 from genrec.tokenizer import AbstractTokenizer
 from genrec.evaluator import Evaluator
-from genrec.fine_grained_evaluator import FineGrainedEvaluator
+from mem_gen_categorizer import FineGrainedEvaluator
 from genrec.utils import get_file_name, get_total_steps, config_for_log, log
 
 
@@ -86,7 +86,7 @@ class Trainer:
         # Set up CSV file for logging evaluation results
         log_dir = os.path.join(self.config['log_dir'], 'fine_grained_results')
         os.makedirs(log_dir, exist_ok=True)
-        self.eval_results_file = os.path.join(
+        self.eval_results_file = self.config['eval_results_file'] or os.path.join(
             log_dir,
             get_file_name(self.config, suffix='_eval_results.csv')
         )
@@ -96,7 +96,7 @@ class Trainer:
         import pandas as pd
         
         # Create DataFrame with ratios
-        patterns = list(self.fine_grained_evaluator.logic2judger.keys()) + ['novelty']
+        patterns = list(self.fine_grained_evaluator.logic2judger.keys()) + ['uncategorized']
         data = {}
         
         for split in ['val', 'test']:
@@ -154,7 +154,7 @@ class Trainer:
             # self._initialize_eval_results_csv()
 
         n_epochs = np.ceil(total_n_steps / (len(train_dataloader) * self.accelerator.num_processes)).astype(int)
-        best_epoch = 0
+        self.best_epoch = 0
         best_val_score = -1
         self.current_step = 0
 
@@ -192,7 +192,7 @@ class Trainer:
                 val_score = all_results[self.config['val_metric']]
                 if val_score > best_val_score:
                     best_val_score = val_score
-                    best_epoch = epoch + 1
+                    self.best_epoch = epoch + 1
                     if self.accelerator.is_main_process:
                         if self.config['use_ddp']: # unwrap model for saving
                             unwrapped_model = self.accelerator.unwrap_model(self.model)
@@ -201,10 +201,10 @@ class Trainer:
                             torch.save(self.model.state_dict(), self.saved_model_ckpt)
                         self.log(f'[Epoch {epoch + 1}] Saved model checkpoint to {self.saved_model_ckpt}')
 
-                if self.config['patience'] is not None and epoch + 1 - best_epoch >= self.config['patience']:
+                if self.config['patience'] is not None and epoch + 1 - self.best_epoch >= self.config['patience']:
                     self.log(f'Early stopping at epoch {epoch + 1}')
                     break
-        self.log(f'Best epoch: {best_epoch}, Best val score: {best_val_score}')
+        self.log(f'Best epoch: {self.best_epoch}, Best val score: {best_val_score}')
         
         # Log evaluation results as wandb artifact
         if self.do_fine_grained_eval and self.accelerator.is_main_process:
@@ -222,7 +222,7 @@ class Trainer:
     #                 header.append(f"{metric}@{k}")
     #         # Add fine-grained metrics
     #         for hop in range(1, self.max_hop + 1):
-    #             for logic in list(self.fine_grained_evaluator.logic2judger.keys()) + ['novelty']:
+    #             for logic in list(self.fine_grained_evaluator.logic2judger.keys()) + ['uncategorized']:
     #                 header.append(f"FG/{logic}_{hop}")
     #         writer.writerow(header)
     
@@ -314,7 +314,7 @@ class Trainer:
                         pred_tuple = tuple(pred_tokens) if len(pred_tokens) > 1 else pred_tokens[0]
                         pred_item_id = self.tokens2item.get(pred_tuple, None)
                         if not pred_item_id:
-                            pred_item_categories = {'novelty'}
+                            pred_item_categories = {'uncategorized'}
                         else:
                             history_seq = test_cases[case_idx][:-1]
                             pred_item_categories = self.fine_grained_evaluator.get_case_labels(history_seq + [pred_item_id])

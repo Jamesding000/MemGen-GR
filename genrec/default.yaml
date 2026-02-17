@@ -26,6 +26,7 @@ val_metric: ndcg@10
 
 # Fine-grained evaluation
 eval_fine_grained: True     # Enable fine-grained evaluation during training
+eval_results_file: None     # Path to the file to save the evaluation results
 fine_grained_metric: ndcg@10 # Metric to use for fine-grained evaluation
 max_hop: 4                   # Maximum hop for fine-grained patterns
 exclusive_labels: True      # Whether to only label the smallest hop where it becomes true

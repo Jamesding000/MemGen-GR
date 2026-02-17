@@ -18,7 +18,7 @@ class FineGrainedEvaluator:
         """
         self.max_hop = max_hop
         self.logic2judger = {
-            'contractivity': self.has_contractivity,
+            'substitutability': self.has_substitutability,
             'symmetry': self.has_symmetry,
             'transitivity': self.has_transitivity,
             '2nd-symmetry': self.has_2nd_symmetry,
@@ -50,7 +50,7 @@ class FineGrainedEvaluator:
         hop = 1
         return v in self.rules[hop][u]
     
-    def has_contractivity(self, u, v, hop):
+    def has_substitutability(self, u, v, hop):
         """Check if u -> v exists in training data."""
         return v in self.rules[hop][u]
     
@@ -81,12 +81,12 @@ class FineGrainedEvaluator:
         keys = ["memorization", "generalization"]
         for logic in self.logic2judger.keys():
             for hop in range(1, self.max_hop + 1):
-                # Skip contractivity_1 because it is equivalent to memorization
-                if hop == 1 and logic == 'contractivity':
+                # Skip substitutability_1 because it is equivalent to memorization
+                if hop == 1 and logic == 'substitutability':
                     continue
                 label = f"{logic}_{hop}"
                 keys.append(label)
-        keys.append("novelty")
+        keys.append("uncategorized")
         return keys
     
     def get_case_labels(self, item_seq):
@@ -97,7 +97,7 @@ class FineGrainedEvaluator:
             item_seq: Item sequence to label
             
         Returns:
-            Set of labels (e.g., {'memorization_2', 'novelty_3'})
+            Set of labels (e.g., {'memorization_2', 'uncategorized_3'})
         """
         labels = set()
         if len(item_seq) < 2:
@@ -112,8 +112,8 @@ class FineGrainedEvaluator:
 
         # check generalization patterns
         for logic, judger in self.logic2judger.items():
-            # contractivity-1 is memorization, so we start from hop 2
-            min_hop = 2 if logic == 'contractivity' else 1
+            # substitutability-1 is memorization, so we start from hop 2
+            min_hop = 2 if logic == 'substitutability' else 1
             for hop in range(min_hop, self.max_hop + 1):
                 if len(item_seq) - hop - 1 < 0:
                     continue
@@ -130,7 +130,7 @@ class FineGrainedEvaluator:
                     break
         # add master label
         if not labels:
-            labels.add(f"novelty")
+            labels.add(f"uncategorized")
         else:
             labels.add("generalization")
         
@@ -153,11 +153,11 @@ class FineGrainedEvaluator:
         ratios = {}
         for logic in self.logic2judger.keys():
             for hop in range(1, self.max_hop + 1):
-                if logic == 'contractivity' and hop == 1:
+                if logic == 'substitutability' and hop == 1:
                     label = "memorization"
                 else:
                     label = f"{logic}_{hop}"
                 ratios[label] = counts[label] / n_instances
         
-        ratios['novelty'] = counts['novelty'] / n_instances
+        ratios['uncategorized'] = counts['uncategorized'] / n_instances
         return ratios

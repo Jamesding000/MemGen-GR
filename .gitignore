@@ -1,15 +1,11 @@
 __pycache__/
 
-cache/AmazonReviews*
-ckpt/
-logs/
-tensorboard/
-
 *.pt
 *.pth
 
+ckpt/
+logs/
 cache/
 wandb/
-
-Confidence_productionized/outputs/
-Confidence_productionized/data/
+outputs/
+figures/
