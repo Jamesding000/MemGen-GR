@@ -239,7 +239,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='TIGER', help='Model name')
     parser.add_argument('--dataset', type=str, default='AmazonReviews2014', help='Dataset name')
-    parser.add_argument('--checkpoint', type=str, default=None, help='Checkpoint path')
+    parser.add_argument('--checkpoint_path', type=str, default=None, help='Checkpoint path')
     parser.add_argument('--eval', type=str, default='test', help='Evaluation set, either test or valid')
     parser.add_argument('--log_file', type=str, default=None, help='CSV file path to log results')
     parser.add_argument('--save_inference', action='store_true', help='Save detailed inference results')

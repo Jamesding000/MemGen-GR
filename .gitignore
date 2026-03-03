@@ -8,4 +8,6 @@ logs/
 cache/
 wandb/
 outputs/
-figures/
+
+memgen-annotations/
+memgen-checkpoints/

@@ -18,11 +18,10 @@ datasets=(
 
 for split in test; do
     for full_name in "${datasets[@]}"; do
-        
-        # 1. Logic to split "Dataset-Category" or handle single "Dataset"
+    
         if [[ "$full_name" == *"-"* ]]; then
-            dataset="${full_name%%-*}"       # Everything before the first '-'
-            category="${full_name#*-}"       # Everything after the first '-'
+            dataset="${full_name%%-*}"
+            category="${full_name#*-}"
             subset_arg="--category=$category"
             ckpt_suffix="-category_${category}"
         else
@@ -31,17 +30,16 @@ for split in test; do
             ckpt_suffix=""
         fi
 
-        # 2. Run for both models
         for model in SASRec TIGER; do
             echo "Running $model on $full_name..."
 
-            checkpoint="${base_path}/${model}-${dataset}${ckpt_suffix}.pth"
+            checkpoint_path="${base_path}/${model}-${dataset}${ckpt_suffix}.pth"
 
             cmd="python mem_gen_evaluation.py \
                 --model=$model \
                 --dataset=$dataset \
                 --eval=$split \
-                --checkpoint=$checkpoint \
+                --checkpoint_path=$checkpoint_path \
                 --wandb_project=$wandb_project \
                 --log_file=$log_file \
                 --save_inference \

@@ -7,7 +7,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='TIGER', help='Model name')
     parser.add_argument('--dataset', type=str, default='AmazonReviews2014', help='Dataset name')
-    parser.add_argument('--checkpoint', type=str, default=None, help='Checkpoint path')
+    parser.add_argument('--checkpoint_path', type=str, default=None, help='Checkpoint path')
     parser.add_argument('--config', type=str, default=None, help='Config file')
     return parser.parse_known_args()
 
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     pipeline = get_pipeline(args.model)(
         model_name=args.model,
         dataset_name=args.dataset,
-        checkpoint_path=args.checkpoint,
+        checkpoint_path=args.checkpoint_path,
         config_file=args.config,
         config_dict=command_line_configs
     )
