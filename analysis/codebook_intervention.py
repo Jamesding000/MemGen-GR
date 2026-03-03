@@ -9,6 +9,7 @@ import sys
 from collections import defaultdict
 
 import pandas as pd
+import yaml
 from tqdm import tqdm
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -17,7 +18,7 @@ from mem_gen_categorizer import FineGrainedEvaluator
 from token_mem_categorizer import PrefixGramMemorizationEvaluator
 from genrec.pipeline import Pipeline
 
-# Label helpers
+# label helpers
 def get_item_case_labels(test_item_seqs, fine_grained_evaluator):
     item_case_labels = {}
     for idx, item_seq in enumerate(test_item_seqs):
@@ -58,27 +59,28 @@ def get_token_category(token_labels_dict, prefix_lengths):
 def is_item_generalization(item_labels):
     return 'memorization' not in item_labels
 
-# Experiment spec parsing
-def parse_experiment_specs(specs):
-    """Parse experiment specs from CLI.
 
-    Each spec is a colon-separated string:
-        CONFIG_NAME:RESULT_PATH:SEM_IDS_PATH:BUDGET_EPOCH
+def load_experiments_from_sweep(sweep_path, dataset, category, results_dir):
+    """Load experiment configs from sweep.yaml and derive all paths."""
+    with open(sweep_path) as f:
+        sweep = yaml.safe_load(f)
 
-    Returns dict: {config_name: {result_path, sem_ids_path, budget}}.
-    """
     experiments = {}
-    for spec in specs:
-        parts = spec.split(':')
-        if len(parts) != 4:
-            raise ValueError(
-                f"Invalid experiment spec '{spec}'. "
-                "Expected CONFIG_NAME:RESULT_PATH:SEM_IDS_PATH:BUDGET_EPOCH")
-        name, result_path, sem_ids_path, budget = parts
-        experiments[name] = {
+    for entry in sweep['parameters']['experiment_tuple']['values']:
+        cb_size, n_cb, budget = entry.split(':')
+        cb_size, n_cb, budget = int(cb_size), int(n_cb), int(budget)
+        config_name = f"{cb_size}x{n_cb}"
+
+        sizes = ','.join([str(cb_size)] * n_cb)
+        sub = f"{dataset}/{category}" if category else dataset
+        sem_ids_path = f"cache/{sub}/processed/sentence-t5-base_{sizes}.sem_ids"
+        os.makedirs(os.path.join(results_dir, sweep['project']), exist_ok=True)
+        result_path = os.path.join(results_dir, f"{sweep['project']}/codebook_{config_name}.csv")
+
+        experiments[config_name] = {
             'result_path': result_path,
             'sem_ids_path': sem_ids_path,
-            'budget': int(budget) if budget else None,
+            'budget': budget,
         }
     return experiments
 
@@ -90,7 +92,7 @@ def parse_sid_config(config_name):
         return int(parts[0]), int(parts[1])
     return None, None
 
-# 1. Process eval results -> val_dynamics & test_summary
+
 def process_eval_results(experiments):
     all_val_rows = []
     all_test_rows = []
@@ -99,14 +101,11 @@ def process_eval_results(experiments):
         result_path = exp['result_path']
         budget_epoch = exp.get('budget')
 
-        if not os.path.exists(result_path):
-            print(f"Warning: result file not found for {sid}: {result_path}")
-            continue
-
+        assert os.path.exists(result_path), f"Result file not found: {result_path}"
         df = pd.read_csv(result_path)
         cb_size, n_cb = parse_sid_config(sid)
 
-        # Val dynamics: all val rows (up to budget if specified)
+        # extract validation dynamics
         val_mask = df['split'] == 'val'
         if budget_epoch is not None:
             val_mask = val_mask & (df['epoch'] <= budget_epoch)
@@ -117,16 +116,13 @@ def process_eval_results(experiments):
             val_df['sid_length'] = n_cb
             all_val_rows.append(val_df)
 
-        # Test summary: single row at budget_epoch (or latest test epoch)
-        if budget_epoch is not None:
-            test_mask = (df['split'] == 'test') & (df['epoch'] == budget_epoch)
-        else:
-            test_epochs = df[df['split'] == 'test']['epoch']
-            if len(test_epochs) == 0:
-                continue
-            test_mask = (df['split'] == 'test') & (df['epoch'] == test_epochs.max())
-
+        # extract test summary
+        assert df[df['split'] == 'test'].shape[0] > 0, "No test data found."
+        
+        test_epochs = df[df['split'] == 'test']['epoch']
+        test_mask = (df['split'] == 'test') & (df['epoch'] == budget_epoch or test_epochs.max())
         test_df = df.loc[test_mask, ['epoch', 'FG/memorization', 'FG/generalization']].copy()
+        
         if len(test_df) > 0:
             test_df['sid'] = sid
             test_df['codebook_size'] = cb_size
@@ -139,91 +135,8 @@ def process_eval_results(experiments):
     test_summary = pd.concat(all_test_rows, ignore_index=True) if all_test_rows else pd.DataFrame()
     return val_dynamics, test_summary
 
-# 2. Collision statistics from SID files
-def compute_prefix_stats(item2sem_ids):
-    if not item2sem_ids:
-        return None
 
-    def to_tuple(sid):
-        if isinstance(sid, (list, tuple)):
-            return tuple(int(x) for x in sid)
-        return (sid,)
-
-    n_items = len(item2sem_ids)
-    n_digits = len(next(iter(item2sem_ids.values())))
-
-    stats = {
-        'n_items': n_items,
-        'n_digits': n_digits,
-        'prefix_collisions': {},
-        'collision_rate': {},
-        'unique_prefixes': {},
-        'avg_items_per_prefix': {},
-        'max_collision_size': {},
-    }
-
-    for prefix_len in range(1, n_digits + 1):
-        prefix2items = defaultdict(list)
-        for item, sid in item2sem_ids.items():
-            t = to_tuple(sid)
-            prefix = t[:prefix_len]
-            prefix2items[prefix].append(item)
-
-        n_unique = len(prefix2items)
-        stats['unique_prefixes'][prefix_len] = n_unique
-
-        n_colliding = sum(len(items) for items in prefix2items.values() if len(items) > 1)
-        stats['prefix_collisions'][prefix_len] = n_colliding
-        stats['collision_rate'][prefix_len] = 100 * n_colliding / n_items if n_items else 0
-
-        stats['avg_items_per_prefix'][prefix_len] = n_items / n_unique if n_unique else 0
-        stats['max_collision_size'][prefix_len] = (
-            max(len(items) for items in prefix2items.values()) if prefix2items else 0)
-
-    return stats
-
-
-def build_collision_summary(experiments):
-    rows = []
-    for config_name, exp in experiments.items():
-        sem_ids_path = resolve_sem_ids_path(exp.get('sem_ids_path', ''))
-        if not sem_ids_path or not os.path.exists(sem_ids_path):
-            continue
-
-        with open(sem_ids_path, 'r') as f:
-            item2sem_ids = json.load(f)
-
-        stats = compute_prefix_stats(item2sem_ids)
-        if stats is None:
-            continue
-
-        cb_size, n_cb = parse_sid_config(config_name)
-        if cb_size is None:
-            continue
-
-        n_items = stats['n_items']
-        n_digits = stats['n_digits']
-        semantic_len = n_digits - 1
-        expressivity = cb_size ** semantic_len
-        n_unique_tuples = stats['unique_prefixes'][semantic_len]
-        max_collision = stats['max_collision_size'][semantic_len]
-        avg_items = stats['avg_items_per_prefix'][semantic_len]
-        collision_pct = stats['collision_rate'][semantic_len]
-
-        rows.append({
-            'config': config_name,
-            'expressivity': expressivity,
-            'n_unique_tuples': n_unique_tuples,
-            'n_items': n_items,
-            'max_collision': max_collision,
-            'avg_items_per_tuple': round(avg_items, 2),
-            'collision_rate_pct': round(collision_pct, 1),
-        })
-
-    return pd.DataFrame(rows)
-
-# 3. Conversion rates per SID config
-def compute_global_conversion_rates(item_case_labels, token_case_labels, prefix_lengths):
+def get_token_mem_ratio_by_prefix_length(item_case_labels, token_case_labels, prefix_lengths):
     max_k = max(prefix_lengths)
     gen_indices = [idx for idx in item_case_labels
                    if is_item_generalization(item_case_labels[idx])]
@@ -260,95 +173,78 @@ def build_conversion_table(experiments, dataset_name, category, version,
     rows = []
 
     for config_name, exp in tqdm(experiments.items(), desc="SID conversion rates"):
-        sem_ids_path = exp.get('sem_ids_path')
-        if not sem_ids_path:
-            continue
+        sem_ids_path = exp['sem_ids_path']
 
         resolved = resolve_sem_ids_path(sem_ids_path)
-        if not os.path.exists(resolved):
-            print(f"Skip {config_name}: path not found: {resolved}")
-            continue
+        assert os.path.exists(resolved), f"Path not found: {resolved}"
 
         cb_size, n_cb = parse_sid_config(config_name)
-        if cb_size is None:
-            continue
+        config_dict = {
+            'logging': False,
+            'sem_ids_path': resolved,
+            'rq_n_codebooks': n_cb,
+            'rq_codebook_size': cb_size,
+        }
+        if category:
+            config_dict['category'] = category
+        if version:
+            config_dict['version'] = version
 
-        try:
-            config_dict = {
-                'logging': False,
-                'sem_ids_path': resolved,
-                'rq_n_codebooks': n_cb,
-                'rq_codebook_size': cb_size,
-            }
-            if category:
-                config_dict['category'] = category
-            if version:
-                config_dict['version'] = version
+        pipe = Pipeline(model_name='TIGER', dataset_name=dataset_name,
+                        config_dict=config_dict)
+        tok = pipe.tokenizer
+        prefix_lengths = list(range(1, n_cb + 2))
 
-            pipe = Pipeline(model_name='TIGER', dataset_name=dataset_name,
-                            config_dict=config_dict)
-            tok = pipe.tokenizer
-            prefix_lengths = list(range(1, n_cb + 2))
+        train_seqs = pipe.split_datasets['train']['item_seq']
+        peval = build_prefix_evaluators(train_seqs, tok, prefix_lengths, max_hop)
+        tlabels = get_token_case_labels(test_item_seqs, peval, prefix_lengths)
 
-            train_seqs = pipe.split_datasets['train']['item_seq']
-            peval = build_prefix_evaluators(train_seqs, tok, prefix_lengths, max_hop)
-            tlabels = get_token_case_labels(test_item_seqs, peval, prefix_lengths)
-
-            rates = compute_global_conversion_rates(item_case_labels, tlabels, prefix_lengths)
-            row = {'config': config_name}
-            for k in prefix_cols:
-                row[k] = rates.get(k, 0.0)
-            rows.append(row)
-        except Exception as e:
-            print(f"Skip {config_name}: {e}")
+        rates = get_token_mem_ratio_by_prefix_length(item_case_labels, tlabels, prefix_lengths)
+        row = {'config': config_name}
+        for k in prefix_cols:
+            row[k] = rates.get(k, 0.0)
+        rows.append(row)
 
     df = pd.DataFrame(rows)
-    if not df.empty:
-        df = df.set_index('config')[prefix_cols]
+    df = df.set_index('config')[prefix_cols]
     return df
 
-# Report
-def print_report(val_dynamics, test_summary, collision_df, conversion_df,
+
+def print_report(val_dynamics, test_summary, conversion_df,
                  dataset_id):
     print(f"\n{'=' * 70}")
     print(f"  Codebook Intervention Analysis — {dataset_id}")
     print(f"{'=' * 70}")
 
-    # --- 1. Conversion Rates ---
-    if len(conversion_df) > 0:
-        print(f"\n  --- Support Coverage / Conversion Rates (%) ---")
-        print(f"  Rows: SID configs | Cols: 0=unseen, 1..N = k-gram memorization")
-        print(conversion_df.round(2).to_string())
+    # conversion rates
+    print(f"\n  --- Support Coverage / Conversion Rates (%) ---")
+    print(f"  Rows: SID configs | Cols: 0=unseen, 1..N = k-gram memorization")
+    print(conversion_df.round(2).to_string())
 
-    # --- 2. Val Training Dynamics (last 3 checkpoints per config) ---
-    if len(val_dynamics) > 0:
-        print(f"\n  --- Validation Training Dynamics ---")
-        # Show last 3 eval epochs per SID config
-        dyn = val_dynamics.copy()
-        tail = (dyn.sort_values('epoch')
-                .groupby('sid').tail(3)
-                .sort_values(['sid_length', 'codebook_size', 'epoch'],
-                             ascending=[False, True, True]))
-        display_cols = ['sid', 'epoch', 'FG/memorization', 'FG/generalization']
-        avail = [c for c in display_cols if c in tail.columns]
-        fmt = tail[avail].copy()
-        for col in ['FG/memorization', 'FG/generalization']:
-            if col in fmt.columns:
-                fmt[col] = fmt[col].apply(lambda x: f"{x:.4f}")
-        print(fmt.to_string(index=False))
+    # validation dynamics
+    print(f"\n  --- Validation Training Dynamics ---")
+    dyn = val_dynamics.copy()
+    tail = (dyn.sort_values('epoch')
+            .groupby('sid').tail(3)
+            .sort_values(['sid_length', 'codebook_size', 'epoch'],
+                            ascending=[False, True, True]))
+    display_cols = ['sid', 'epoch', 'FG/memorization', 'FG/generalization']
+    avail = [c for c in display_cols if c in tail.columns]
+    fmt = tail[avail].copy()
+    for col in ['FG/memorization', 'FG/generalization']:
+        fmt[col] = fmt[col].apply(lambda x: f"{x:.4f}")
+    print(fmt.to_string(index=False))
 
-    # --- 3. Test Summary (at budget epoch) ---
-    if len(test_summary) > 0:
-        print(f"\n  --- Test Results (at budget epoch) ---")
-        ts = test_summary.sort_values(['sid_length', 'codebook_size'],
-                                       ascending=[False, True]).copy()
-        display_cols = ['sid', 'epoch', 'FG/memorization', 'FG/generalization']
-        avail = [c for c in display_cols if c in ts.columns]
-        fmt = ts[avail].copy()
-        for col in ['FG/memorization', 'FG/generalization']:
-            if col in fmt.columns:
-                fmt[col] = fmt[col].apply(lambda x: f"{x:.4f}")
-        print(fmt.to_string(index=False))
+    # test summary
+    print(f"\n  --- Test Results (at budget epoch) ---")
+    ts = test_summary.sort_values(['sid_length', 'codebook_size'],
+                                    ascending=[False, True]).copy()
+    display_cols = ['sid', 'epoch', 'FG/memorization', 'FG/generalization']
+    avail = [c for c in display_cols if c in ts.columns]
+    fmt = ts[avail].copy()
+    for col in ['FG/memorization', 'FG/generalization']:
+        fmt[col] = fmt[col].apply(lambda x: f"{x:.4f}")
+    print(fmt.to_string(index=False))
 
     print(f"{'=' * 70}\n")
 
@@ -360,9 +256,9 @@ def main():
     p.add_argument("--split", default="test")
     p.add_argument("--max_hop", type=int, default=4)
     p.add_argument("--output_dir", default="outputs")
-    p.add_argument("--experiments", nargs="+", required=True,
-                   help="Experiment specs: CONFIG_NAME:RESULT_PATH:SEM_IDS_PATH:BUDGET_EPOCH "
-                        "(e.g. 256x4:logs/.../eval_results.csv:cache/.../256x4.sem_ids:200)")
+    p.add_argument("--results_dir", default="logs/fine_grained_results")
+    p.add_argument("--sweep_config", required=True,
+                   help="Path to sweep.yaml with experiment_tuple definitions")
     args = p.parse_args()
 
     dataset_id = args.dataset
@@ -373,16 +269,13 @@ def main():
 
     os.makedirs(args.output_dir, exist_ok=True)
 
-    experiments = parse_experiment_specs(args.experiments)
+    experiments = load_experiments_from_sweep(
+        args.sweep_config, args.dataset, args.category, args.results_dir)
 
     # --- 1. Process eval results ---
     print("Processing evaluation results...")
     val_dynamics, test_summary = process_eval_results(experiments)
-
-    # --- 2. Collision summary ---
-    print("Computing collision statistics...")
-    collision_df = build_collision_summary(experiments)
-
+    
     # --- 3. Conversion rates ---
     config_sasrec = {'logging': False}
     if args.category:
@@ -406,22 +299,14 @@ def main():
         item_case_labels, test_item_seqs, args.max_hop)
 
     # --- Save ---
-    if len(test_summary) > 0:
-        test_summary.to_csv(os.path.join(args.output_dir, 'codebook_test_summary.csv'),
-                            index=False)
-    if len(val_dynamics) > 0:
-        val_dynamics.to_csv(os.path.join(args.output_dir, 'codebook_val_dynamics.csv'),
-                            index=False)
-    if len(collision_df) > 0:
-        collision_df.to_csv(os.path.join(args.output_dir, 'codebook_collision_summary.csv'),
-                            index=False)
-    if len(conversion_df) > 0:
-        conversion_df.to_csv(os.path.join(args.output_dir, 'codebook_conversion_rates.csv'))
+    test_summary.to_csv(os.path.join(args.output_dir, 'codebook_test_summary.csv'), index=False)
+    val_dynamics.to_csv(os.path.join(args.output_dir, 'codebook_val_dynamics.csv'), index=False)
+    conversion_df.to_csv(os.path.join(args.output_dir, 'codebook_conversion_rates.csv'))
 
     print(f"All results saved to {args.output_dir}/codebook_*")
 
     # --- Report ---
-    print_report(val_dynamics, test_summary, collision_df, conversion_df, dataset_id)
+    print_report(val_dynamics, test_summary, conversion_df, dataset_id)
 
 
 if __name__ == "__main__":

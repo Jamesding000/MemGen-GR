@@ -10,7 +10,7 @@ N_MSP_BINS=4
 
 DATASET_ID="${DATASET}-${CATEGORY}"
 
-SEM_IDS_PATH="saved_models/semantic_ids/${DATASET_ID}_sentence-t5-base_256,256,256,256.sem_ids"
+SEM_IDS_PATH="memgen-checkpoints/semantic_ids/${DATASET_ID}_sentence-t5-base_256,256,256,256.sem_ids"
 TIGER_INFER_PATH="logs/inference_results/TIGER_${DATASET_ID}_${SPLIT}_inference_results.csv"
 SASREC_INFER_PATH="logs/inference_results/SASRec_${DATASET_ID}_${SPLIT}_inference_results.csv"
 
@@ -27,7 +27,6 @@ python analysis/performance_analysis.py \
     --sasrec_infer_path "${SASREC_INFER_PATH}" \
     --tiger_infer_path "${TIGER_INFER_PATH}" \
     --split "${SPLIT}" \
-    --output_dir "${OUTPUT_DIR}" \
-    --n_msp_bins "${N_MSP_BINS}"
+    --output_dir "${OUTPUT_DIR}"
 
 echo "Done."
