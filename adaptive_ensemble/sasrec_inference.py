@@ -176,7 +176,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Extract confidence from SASRec")
     parser.add_argument('--model', type=str, default='SASRec', help='Model name')
     parser.add_argument('--dataset', type=str, default='AmazonReviews2014', help='Dataset name')
-    parser.add_argument('--checkpoint', type=str, required=True, help='Checkpoint path')
+    parser.add_argument('--checkpoint_path', type=str, required=True, help='Checkpoint path')
     parser.add_argument('--eval', type=str, default='test', help='Evaluation set')
 
     parser.add_argument('--category', type=str, default=None,
@@ -193,7 +193,7 @@ if __name__ == '__main__':
     args, unparsed_args = parse_args()
     command_line_configs = parse_command_line_args(unparsed_args)
 
-    extracted_info = extract_category_from_checkpoint(args.checkpoint)
+    extracted_info = extract_category_from_checkpoint(args.checkpoint_path)
     if 'Yelp' in args.dataset:
         if args.version is None and extracted_info:
             args.version = extracted_info
@@ -201,7 +201,7 @@ if __name__ == '__main__':
         if args.category is None and extracted_info:
             args.category = extracted_info
 
-    # Skip if output already exists (before loading model)
+    # skip if output already exists (before loading model)
     dataset_identifier = get_dataset_identifier(args.dataset, category=args.category, version=args.version)
     output_path = f'outputs/sasrec_predictions_with_scores_{args.eval}_{dataset_identifier}.csv'
     if os.path.exists(output_path):
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     pipeline = SASRecConfidencePipeline(
         model_name=args.model,
         dataset_name=args.dataset,
-        checkpoint_path=args.checkpoint,
+        checkpoint_path=args.checkpoint_path,
         config_dict=command_line_configs,
         eval_set=args.eval,
         category=args.category,

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Section 5.2: MSP Indicator Validation
 Validate that MSP correlates with memorization labels and model performance.
