@@ -48,7 +48,7 @@ class Pipeline:
         if require_logging:
             wandb_project = self.config['wandb_project']
             wandb_group = f"{self.config['dataset']}-{self.config['model']}"
-            wandb_run_name = get_file_name(self.config, suffix='')
+            wandb_run_name = self.config['wandb_run_name'] if 'wandb_run_name' in self.config else get_file_name(self.config, suffix='')
             
             self.accelerator.init_trackers(
                 project_name=wandb_project,
@@ -122,18 +122,22 @@ class Pipeline:
             self.trainer.saved_model_ckpt = ckpt_path_container[0]
 
         self.model = self.accelerator.unwrap_model(self.model)
-        if self.checkpoint_path is None:
+        
+        if self.config['load_best_ckpt'] and self.checkpoint_path is None:
             self.model.load_state_dict(torch.load(self.trainer.saved_model_ckpt))
+            eval_epoch = self.trainer.best_epoch
+            if self.accelerator.is_main_process:
+                self.log(f'Loaded best model checkpoint from {self.trainer.saved_model_ckpt}')
+        else:
+            eval_epoch = self.trainer.last_epoch
 
         self.model, test_dataloader = self.accelerator.prepare(
             self.model, test_dataloader
         )
-        if self.accelerator.is_main_process and self.checkpoint_path is None:
-            self.log(f'Loaded best model checkpoint from {self.trainer.saved_model_ckpt}')
 
         test_results = self.trainer.evaluate(
             test_dataloader, split='test',
-            step=self.trainer.current_step, epoch=self.trainer.best_epoch)
+            step=self.trainer.current_step, epoch=eval_epoch)
 
         if self.accelerator.is_main_process:
             for key in test_results:

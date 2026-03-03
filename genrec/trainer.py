@@ -157,7 +157,10 @@ class Trainer:
         self.best_epoch = 0
         best_val_score = -1
         self.current_step = 0
-
+        
+        # If budget_epochs is specified, use it instead of n_epochs
+        budget_epochs = self.config.get('budget_epochs', None)
+        n_epochs = budget_epochs or n_epochs
         for epoch in range(n_epochs):
             # Training
             self.model.train()
@@ -204,6 +207,7 @@ class Trainer:
                 if self.config['patience'] is not None and epoch + 1 - self.best_epoch >= self.config['patience']:
                     self.log(f'Early stopping at epoch {epoch + 1}')
                     break
+        self.last_epoch = epoch + 1
         self.log(f'Best epoch: {self.best_epoch}, Best val score: {best_val_score}')
         
         # Log evaluation results as wandb artifact

@@ -1,0 +1,37 @@
+program: analysis/main_wrapper.py
+method: grid
+name: codebook_density_analysis_Beauty14
+project: codebook_density_analysis_Beauty14
+parameters:
+  experiment_tuple:
+    values:
+      - "64:4:120"
+      - "256:4:120"
+      - "64:3:116"
+      - "1024:3:116"
+      - "256:2:110"
+      - "4096:2:110"
+      - "1024:1:108"
+      - "4096:1:108"
+  category:
+    value: "Beauty"
+  num_layers:
+    value: 4
+  num_decoder_layers:
+    value: 4
+  d_model:
+    value: 128
+  d_ff:
+    value: 1024
+  num_heads:
+    value: 6
+  d_kv:
+    value: 64
+  eval_interval:
+    value: 2
+  patience:
+    value: "None"
+  rq_faiss:
+    value: "False"
+  load_best_ckpt:
+    value: "False"

@@ -369,7 +369,10 @@ class TIGERTokenizer(AbstractTokenizer):
                 self.log(f'[TOKENIZER] Semantic IDs not found. Training RQ-VAE model...')
                 embs_for_training = torch.FloatTensor(sent_embs[training_item_mask]).to(self.config['device'])
                 sent_embs = torch.FloatTensor(sent_embs).to(self.config['device'])
-                model_path = os.path.join(dataset.cache_dir, 'processed/rqvae.pth')
+                model_path = os.path.join(
+                    dataset.cache_dir, 'processed',
+                    f'rqvae_{list_to_str(self.codebook_sizes, remove_blank=True)}.pth'
+                )
                 rqvae_model = self._train_rqvae(embs_for_training, model_path)
                 self._generate_semantic_id(rqvae_model, sent_embs, sem_ids_path)
 

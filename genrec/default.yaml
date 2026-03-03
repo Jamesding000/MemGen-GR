@@ -1,9 +1,9 @@
 num_proc: 1
-cache_dir: cache/       # Usually for raw and processed data
+cache_dir: /data/user_data/jamesdin/R4R/cache/       # Usually for raw and processed data
 wandb_project: genrec-memorization-and-generalization
 log_dir: logs/
 tensorboard_log_dir: tensorboard/
-ckpt_dir: ckpt/
+ckpt_dir: /data/user_data/jamesdin/R4R/ckpt/
 run_id: genrec_default  # Change this to your customized run id
 rand_seed: 2024
 reproducibility: True
@@ -16,6 +16,7 @@ weight_decay: 0.0
 warmup_steps: 10000
 steps: ~
 epochs: 300             # Make sure model fully converges
+budget_epochs: None     # If specified, early stop at the specified epoch
 max_grad_norm: 1.0      # None for no clipping, else a float value
 eval_interval: 2        # Evaluate every n epochs
 patience: 20            # Early stopping. Stop training after n epochs without improvement. Set to None to disable
@@ -23,6 +24,7 @@ patience: 20            # Early stopping. Stop training after n epochs without i
 topk: [5,10]
 metrics: [ndcg,recall,err]
 val_metric: ndcg@10
+load_best_ckpt: True
 
 # Fine-grained evaluation
 eval_fine_grained: True     # Enable fine-grained evaluation during training
