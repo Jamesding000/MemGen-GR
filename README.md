@@ -1,10 +1,10 @@
-# On the Memorization and Generalization of Generative Recommendation
+# How Well Does Generative Recommendation Generalize?
 
-<a href="<paper link not ready yet>"><img src="https://img.shields.io/badge/Paper-ArXiv-red"></a>
+<a href="https://arxiv.org/abs/2603.19809"><img src="https://img.shields.io/badge/Paper-ArXiv-red"></a>
 <a href="https://huggingface.co/datasets/jamesding0302/memgen-annotations"><img src="https://img.shields.io/badge/Data-Hugging%20Face-yellow"></a>
 <a href="https://huggingface.co/jamesding0302/memgen-checkpoints"><img src="https://img.shields.io/badge/Models-Hugging%20Face-blue"></a>
 
-This repository provides the implementation for the paper **"On the Memorization and Generalization of Generative Recommendation".**
+This repository provides the implementation for the paper **"How Well Does Generative Recommendation Generalize?".**
 
 In this work, we study the memorization and generalization behavior of generative recommendation (GR) models. We introduce a fine-grained evaluation framework that categorizes test instances by memorization and generalization patterns, and a token-level memorization analysis that explains why GR generalizes better but memorizes worse than conventional models. We further propose an adaptive ensemble method that leverages confidence-based indicators to combine GR and conventional models, improving overall performance.
 
