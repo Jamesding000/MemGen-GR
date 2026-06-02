@@ -4,7 +4,9 @@
 <a href="https://huggingface.co/datasets/jamesding0302/memgen-annotations"><img src="https://img.shields.io/badge/Data-Hugging%20Face-yellow"></a>
 <a href="https://huggingface.co/jamesding0302/memgen-checkpoints"><img src="https://img.shields.io/badge/Models-Hugging%20Face-blue"></a>
 
-This repository provides the implementation for our **KDD 2026** paper **["How Well Does Generative Recommendation Generalize?"](https://arxiv.org/abs/2603.19809)**
+This repository provides the code for our paper **["How Well Does Generative Recommendation Generalize?"](https://arxiv.org/abs/2603.19809)**
+
+> 🚀 This work was accepted to **KDD 2026** under the title **"On the Memorization and Generalization of Generative Recommendation"**.
 
 In this work, we study the memorization and generalization behavior of generative recommendation (GR) models. We introduce a fine-grained evaluation framework that categorizes test instances by memorization and generalization patterns, and a token-level memorization analysis that explains why GR generalizes better but memorizes worse than conventional models. We further propose an adaptive ensemble method that leverages confidence-based indicators to combine GR and conventional models, improving overall performance.
 
@@ -93,9 +95,11 @@ bash scripts/eval/eval_adaptive_ensemble.sh
 ## Citing this work
 Please cite the following paper if you find our code helpful.
 
+```bibtex
 @inproceedings{ding2026generalize,
-  title={How Well Does Generative Recommendation Generalize?},
+  title={On the Memorization and Generalization of Generative Recommendation},
   author={Yijie Ding and Zitian Guo and Jiacheng Li and Letian Peng and Shuai Shao and Wei Shao and Xiaoqiang Luo and Luke Simon and Jingbo Shang and Julian McAuley and Yupeng Hou},
   booktitle={{KDD}},
   year={2026}
 }
+```
