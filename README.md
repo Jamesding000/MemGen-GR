@@ -89,3 +89,13 @@ Run inference for both models and perform the adaptive ensemble grid search:
 ```bash
 bash scripts/eval/eval_adaptive_ensemble.sh
 ```
+
+## Citing this work
+Please cite the following paper if you find our code helpful.
+
+@inproceedings{ding2026generalize,
+  title={How Well Does Generative Recommendation Generalize?},
+  author={Yijie Ding and Zitian Guo and Jiacheng Li and Letian Peng and Shuai Shao and Wei Shao and Xiaoqiang Luo and Luke Simon and Jingbo Shang and Julian McAuley and Yupeng Hou},
+  booktitle={{KDD}},
+  year={2026}
+}
