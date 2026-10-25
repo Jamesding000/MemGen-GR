@@ -250,14 +250,14 @@ if __name__ == '__main__':
     args, unparsed_args = parse_args()
     command_line_configs = parse_command_line_args(unparsed_args)
 
-    assert args.checkpoint is not None, 'Checkpoint path is required.'
+    assert args.checkpoint_path is not None, 'Checkpoint path is required.'
     command_line_configs.update({'epochs': 0})
     command_line_configs.update({'logging': False})
 
     pipeline = FineGrainedResultPipeline(
         model_name=args.model,
         dataset_name=args.dataset,
-        checkpoint_path=args.checkpoint,
+        checkpoint_path=args.checkpoint_path,
         config_dict=command_line_configs,
         eval_set=args.eval,
         log_file=args.log_file,
